@@ -26,23 +26,28 @@ bool led_medidor, led_medidor_ant=1, pisca;
 int pulso, pulso_max; //valor da medicao do led na piscada
 String envio;
 bool flag_pulso;  //verifica q houve pulso
+int now_interrupt;  //tempo da interrupcao do led
 
 //Nunca execute nada na interrupcao, apenas setar flags!
 void tCallback(void *tCall){
+    //now_interrupt = millis();  //calcula o tempo da interrupcao
     pulso = analogRead(A0);
 
     if(pulso<pulso_max-20) led_medidor = 0; //nao houve pulso do led do medidor, valor de leitura base do opto
     else led_medidor = 1;
 
-    if(!led_medidor_ant & led_medidor) {
-      cont_pulso++; //se mudou de 0 pra 1, incrementa
+    if(!led_medidor_ant & led_medidor) { //se mudou de 0 pra 1, incrementa
+      cont_pulso++;
       flag_pulso=1;
+      //pisca o led azul da placa 10ms em alto, depois desliga
+      //digitalWrite(LED_AZUL, LOW);
     }
+
     led_medidor_ant = led_medidor;
 
     if(pulso>pulso_max)  pulso_max = pulso; //pega o valor maximo do pulso do led
 
-    contador++;   //pra calcular quantas vezes essa funcao eh executada
+    contador++;   //pra calcular quantas vezes essa funcao eh executada por segundo
 }
 
 //FUNCAO DE EXECUCAO COM ESTOURO DE TIMER
@@ -59,7 +64,7 @@ const char* googleRedirHost = "script.googleusercontent.com";
 const char *GScriptId = "AKfycby6pTof46p1U0oUxtmjEKF5sBDhzzjrdHPBoYb_u_PpHBJ0rWbo";
 const int httpsPort = 443;
 // echo | openssl s_client -connect script.google.com:443 |& openssl x509 -fingerprint -noout
-const char* fingerprint = "";
+const char* fingerprint = ""; //############# PREENCHER
 
 // Write to Google Spreadsheet
 String url = String("/macros/s/") + GScriptId + "/exec?value=Conected_ESP8266";
@@ -86,6 +91,46 @@ void configModeCallback (WiFiManager *myWiFiManager) {
   ticker.attach(0.1, tick);
 }
 
+// Use HTTPSRedirect class to create TLS connection
+void Conecta_google(void) {
+  bool flag_fingerprint = 0;
+  HTTPSRedirect client(httpsPort);
+  Serial.print("Connecting to ");
+  Serial.println(host);
+
+  bool flag = false;
+  for (int i=0; i<5; i++){
+  int retval = client.connect(host, httpsPort);
+  if (retval == 1) {
+     flag = true;
+     break;
+  }
+  else
+    Serial.println("Connection failed. Retrying...");
+  }
+
+  Serial.flush();
+  if (!flag){
+  Serial.print("Could not connect to server: ");
+  Serial.println(host);
+  Serial.println("Exiting...");
+  return;
+  }
+
+  Serial.flush();
+  while(!flag_fingerprint) {  //se o fingerprint nao foi aceito repete indefinidamente
+    if (client.verify(fingerprint, host)) {
+      Serial.println("Certificate match.");
+      flag_fingerprint = 1; //obteve sucesso
+    }
+    else {
+      Serial.println("Certificate mis-match");
+      ticker.attach(0.5, tick);
+      delay(1000);
+    }
+  }
+}
+
 void setup() {
   Serial.begin(115200);
   pinMode(LED_AZUL, OUTPUT);  //define o led da placa como saida
@@ -100,38 +145,9 @@ void setup() {
   //setup_wifi();
   digitalWrite(LED_AZUL, HIGH); //desliga o led azul
   usrInit();  //ativa a interrupção
+  Conecta_google(); //tenta se conectar no google
 
-    // Use HTTPSRedirect class to create TLS connection
-  HTTPSRedirect client(httpsPort);
-  Serial.print("Connecting to ");
-  Serial.println(host);
 
-  bool flag = false;
-  for (int i=0; i<5; i++){
-    int retval = client.connect(host, httpsPort);
-    if (retval == 1) {
-       flag = true;
-       break;
-    }
-    else
-      Serial.println("Connection failed. Retrying...");
-  }
-
-  Serial.flush();
-  if (!flag){
-    Serial.print("Could not connect to server: ");
-    Serial.println(host);
-    Serial.println("Exiting...");
-    return;
-  }
-
-  Serial.flush();
-  if (client.verify(fingerprint, host)) {
-    Serial.println("Certificate match.");
-  }
-  else {
-    Serial.println("Certificate mis-match");
-  }
 
   // Note: setup() must finish within approx. 1s, or the the watchdog timer
   // will reset the chip. Hence don't put too many requests in setup()
@@ -139,10 +155,10 @@ void setup() {
 
 
   Serial.println("==============================================================================");
-  url = String("/macros/s/") + GScriptId + "/exec?now=ESP8266 conectado!";
-  client.printRedir(url, host, googleRedirHost);
+  //url = String("/macros/s/") + GScriptId + "/exec?now=ESP8266 conectado!";
+  //client.printRedir(url, host, googleRedirHost);
   //client.printRedir(url2, host, googleRedirHost);
-  Serial.println("==============================================================================");
+  //Serial.println("==============================================================================");
 }
 
 // void setup_wifi() {
@@ -163,24 +179,24 @@ int cont = 0, valor_lum;
 
 void loop()
 {
-  // Serial.print("pulsos: ");
-  // Serial.println(cont_pulso);
-  // Serial.print("leituras por loop: ");
-  // Serial.println(contador);
-  // Serial.print("opto_min: ");
-  // Serial.println(pulso);
-  // Serial.print("opto_max: ");
-  // Serial.println(pulso_max);
-  // pulso_max = 0; //reinicia o pulso_max para se recalibrar
-  // contador = 0;  //zera a contagem de interrupcoes por segundo q esta ocorrendo
-  // yield();
-  // delay(1000);
+  // while(millis() < now_interrupt + 10);
+  // digitalWrite(LED_AZUL, HIGH);
+  Serial.print("pulsos: ");
+  Serial.println(cont_pulso);
+  Serial.print("leituras por loop: ");
+  Serial.println(contador);
+  Serial.print("opto_min: ");
+  Serial.println(pulso);
+  Serial.print("opto_max: ");
+  Serial.println(pulso_max);
+  pulso_max = 0; //reinicia o pulso_max para se recalibrar
+  contador = 0;  //zera a contagem de interrupcoes por segundo q esta ocorrendo
+  yield();
+  delay(1000);
+  // Serial.print("tempo da interrupcao (ms): ");
+  // Serial.println(millis()-now_interrupt);
 
   if(flag_pulso) {  //so envia dados se houver pulso no led do medidor
-    //pisca o led azul da placa
-    digitalWrite(LED_AZUL, LOW);
-    delay(10);
-    digitalWrite(LED_AZUL, HIGH);
     Serial.println("========================================================== INICIO");
     long now = millis();
     flag_pulso=0; //so executa de novo se houver nova piscada no led do medidor
