@@ -83,19 +83,22 @@ void configModeCallback (WiFiManager *myWiFiManager) {
   //if you used auto generated SSID, print it
   Serial.println(myWiFiManager->getConfigPortalSSID());
   //entered config mode, make led toggle faster
-  ticker.attach(0.2, tick);
+  ticker.attach(0.1, tick);
 }
 
 void setup() {
   Serial.begin(115200);
+  pinMode(LED_AZUL, OUTPUT);  //define o led da placa como saida
   WiFiManager wifiManager;
-  wifiManager.resetSettings();
+  //wifiManager.resetSettings(); //força entrada no portal de configuracao, só pra testes
+  //set callback that gets called when connecting to previous WiFi fails, and enters Access Point mode
+  wifiManager.setAPCallback(configModeCallback);
   wifiManager.autoConnect("ESP8266", "smolder"); //nome e senha para acessar o portal
   Serial.println("ESP conectado no WIFI !");
   ticker.detach();
   Serial.flush();
-  pinMode(LED_AZUL, OUTPUT);
   //setup_wifi();
+  digitalWrite(LED_AZUL, HIGH); //desliga o led azul
   usrInit();  //ativa a interrupção
 
     // Use HTTPSRedirect class to create TLS connection
@@ -160,24 +163,24 @@ int cont = 0, valor_lum;
 
 void loop()
 {
-  Serial.print("pulsos: ");
-  Serial.println(cont_pulso);
-  Serial.print("leituras por loop: ");
-  Serial.println(contador);
-  Serial.print("opto_min: ");
-  Serial.println(pulso);
-  Serial.print("opto_max: ");
-  Serial.println(pulso_max);
-  pulso_max = 0; //reinicia o pulso_max para se recalibrar
-  contador = 0;  //zera a contagem de interrupcoes por segundo q esta ocorrendo
-  yield();
-  digitalWrite(LED_AZUL, LOW);
-  delay(10);
-  digitalWrite(LED_AZUL, HIGH);
-  delay(990);
-  yield();
+  // Serial.print("pulsos: ");
+  // Serial.println(cont_pulso);
+  // Serial.print("leituras por loop: ");
+  // Serial.println(contador);
+  // Serial.print("opto_min: ");
+  // Serial.println(pulso);
+  // Serial.print("opto_max: ");
+  // Serial.println(pulso_max);
+  // pulso_max = 0; //reinicia o pulso_max para se recalibrar
+  // contador = 0;  //zera a contagem de interrupcoes por segundo q esta ocorrendo
+  // yield();
+  // delay(1000);
 
   if(flag_pulso) {  //so envia dados se houver pulso no led do medidor
+    //pisca o led azul da placa
+    digitalWrite(LED_AZUL, LOW);
+    delay(10);
+    digitalWrite(LED_AZUL, HIGH);
     Serial.println("========================================================== INICIO");
     long now = millis();
     flag_pulso=0; //so executa de novo se houver nova piscada no led do medidor
