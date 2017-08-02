@@ -15,9 +15,6 @@ extern "C"{
 #include "user_interface.h"
 }
 
-#define wifi_ssid "PAPAYA"
-#define wifi_password "papaya2014"
-
 #define LED_AZUL 2 // led azul na placa lolin nodemcu v3
 
 os_timer_t mTimer;
@@ -28,7 +25,6 @@ bool led_medidor, led_medidor_ant=1, pisca;
 int pulso, pulso_max; //valor da medicao do led na piscada
 String envio;
 bool flag_pulso;  //verifica q houve pulso
-int now_interrupt;  //tempo da interrupcao do led
 
 //Nunca execute nada na interrupcao, apenas setar flags!
 void tCallback(void *tCall){
@@ -142,11 +138,11 @@ void setup() {
   wifiManager.setAPCallback(configModeCallback);
   wifiManager.autoConnect("ESP8266", "smolder"); //nome e senha para acessar o portal
   Serial.println("ESP conectado no WIFI !");
-  ticker.detach();
   Serial.flush();
   digitalWrite(LED_AZUL, HIGH); //desliga o led azul
   usrInit();  //ativa a interrupção
   Conecta_google(); //tenta se conectar no google
+  ticker.detach();
   Serial.print("###### Iniciando Servidor Setup #######: ");
   server.on ( "/", handleRoot );
   server.begin();
