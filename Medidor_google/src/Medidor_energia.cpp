@@ -96,7 +96,8 @@ void configModeCallback (WiFiManager *myWiFiManager) {
 
 // Use HTTPSRedirect class to create TLS connection
 void Conecta_google(void) {
-  bool flag_fingerprint = 0;
+  ticker.attach(0.5, tick);  //pisca para mostrar q esta tentando se conectar ao google
+  //bool flag_fingerprint = 0;
   HTTPSRedirect client(httpsPort);
   Serial.print("Connecting to ");
   Serial.println(host);
@@ -117,21 +118,14 @@ void Conecta_google(void) {
   Serial.print("Could not connect to server: ");
   Serial.println(host);
   Serial.println("Exiting...");
-  return;
   }
 
   Serial.flush();
-  while(!flag_fingerprint) {  //se o fingerprint nao foi aceito repete indefinidamente
-    if (client.verify(fingerprint, host)) {
-      Serial.println("Certificate match.");
-      flag_fingerprint = 1; //obteve sucesso
-    }
-    else {
+  while(!client.verify(fingerprint, host)) {  //se o fingerprint nao foi aceito repete indefinidamente
       Serial.println("Certificate mis-match");
-      ticker.attach(0.5, tick);
       delay(1000);
-    }
   }
+  Serial.println("Certificate match.");
 }
 
 String getPage();
