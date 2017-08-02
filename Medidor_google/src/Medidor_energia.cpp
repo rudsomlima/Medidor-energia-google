@@ -3,6 +3,12 @@
 #include <HTTPSRedirect.h>
 //#include "DebugMacros.h"
 
+//https://github.com/tzapu/WiFiManager
+#include <DNSServer.h>
+#include <ESP8266WebServer.h>
+#include <WiFiManager.h>
+#include <Ticker.h>
+
 extern "C"{
 #include "user_interface.h"
 }
@@ -13,6 +19,7 @@ extern "C"{
 #define LED_AZUL 2 // led azul na placa lolin nodemcu v3
 
 os_timer_t mTimer;
+WiFiClient  client;
 
 int contador, leituras, cont_pulso;
 bool led_medidor, led_medidor_ant=1, pisca;
@@ -52,7 +59,7 @@ const char* googleRedirHost = "script.googleusercontent.com";
 const char *GScriptId = "AKfycby6pTof46p1U0oUxtmjEKF5sBDhzzjrdHPBoYb_u_PpHBJ0rWbo";
 const int httpsPort = 443;
 // echo | openssl s_client -connect script.google.com:443 |& openssl x509 -fingerprint -noout
-const char* fingerprint = ""; //#### GERAR E preencher ####
+const char* fingerprint = "";
 
 // Write to Google Spreadsheet
 String url = String("/macros/s/") + GScriptId + "/exec?value=Conected_ESP8266";
@@ -61,11 +68,34 @@ String url = String("/macros/s/") + GScriptId + "/exec?value=Conected_ESP8266";
 // Read from Google Spreadsheet
 //String url3 = String("/macros/s/") + GScriptId + "/exec?read";
 
+//for LED status
+Ticker ticker;
+void tick()
+{
+  //toggle state
+  int state = digitalRead(LED_AZUL);  // get the current state of GPIO1 pin
+  digitalWrite(LED_AZUL, !state);     // set pin to the opposite state
+}
+
+void configModeCallback (WiFiManager *myWiFiManager) {
+  Serial.println("Entered config mode");
+  Serial.println(WiFi.softAPIP());
+  //if you used auto generated SSID, print it
+  Serial.println(myWiFiManager->getConfigPortalSSID());
+  //entered config mode, make led toggle faster
+  ticker.attach(0.2, tick);
+}
+
 void setup() {
   Serial.begin(115200);
+  WiFiManager wifiManager;
+  wifiManager.resetSettings();
+  wifiManager.autoConnect("ESP8266", "smolder"); //nome e senha para acessar o portal
+  Serial.println("ESP conectado no WIFI !");
+  ticker.detach();
   Serial.flush();
   pinMode(LED_AZUL, OUTPUT);
-  setup_wifi();
+  //setup_wifi();
   usrInit();  //ativa a interrupção
 
     // Use HTTPSRedirect class to create TLS connection
@@ -112,18 +142,18 @@ void setup() {
   Serial.println("==============================================================================");
 }
 
-void setup_wifi() {
-  delay(10);
-  // We start by connecting to a WiFi network
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(wifi_ssid);
-  WiFi.begin(wifi_ssid, wifi_password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-}
+// void setup_wifi() {
+//   delay(10);
+//   // We start by connecting to a WiFi network
+//   Serial.println();
+//   Serial.print("Connecting to ");
+//   Serial.println(wifi_ssid);
+//   WiFi.begin(wifi_ssid, wifi_password);
+//   while (WiFi.status() != WL_CONNECTED) {
+//     delay(500);
+//     Serial.print(".");
+//   }
+// }
 
 long lastMsg = 0;
 int cont = 0, valor_lum;
