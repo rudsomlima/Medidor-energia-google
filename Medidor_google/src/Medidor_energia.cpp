@@ -139,7 +139,6 @@ void setup() {
   wifiManager.autoConnect("ESP8266", "smolder"); //nome e senha para acessar o portal
   Serial.println("ESP conectado no WIFI !");
   Serial.flush();
-  digitalWrite(LED_AZUL, HIGH); //desliga o led azul
   usrInit();  //ativa a interrupção
   Conecta_google(); //tenta se conectar no google
   ticker.detach();
@@ -148,6 +147,7 @@ void setup() {
   server.begin();
   Serial.println("OK");
   Serial.println("==============================================================================");
+  digitalWrite(LED_AZUL, HIGH); //desliga o led azul
   //url = String("/macros/s/") + GScriptId + "/exec?now=ESP8266 conectado!";
   //client.printRedir(url, host, googleRedirHost);
   //client.printRedir(url2, host, googleRedirHost);
