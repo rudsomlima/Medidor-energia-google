@@ -9,6 +9,8 @@
 #include <WiFiManager.h>
 #include <Ticker.h>
 
+ESP8266WebServer server(80);
+
 extern "C"{
 #include "user_interface.h"
 }
@@ -19,7 +21,7 @@ extern "C"{
 #define LED_AZUL 2 // led azul na placa lolin nodemcu v3
 
 os_timer_t mTimer;
-WiFiClient  client;
+WiFiClient  clientWifi;
 
 int contador, leituras, cont_pulso;
 bool led_medidor, led_medidor_ant=1, pisca;
@@ -57,6 +59,7 @@ void usrInit(void){
 }
 
 void setup_wifi();
+String getPage();
 
 const char* host = "script.google.com";
 const char* googleRedirHost = "script.googleusercontent.com";
@@ -64,7 +67,7 @@ const char* googleRedirHost = "script.googleusercontent.com";
 const char *GScriptId = "AKfycby6pTof46p1U0oUxtmjEKF5sBDhzzjrdHPBoYb_u_PpHBJ0rWbo";
 const int httpsPort = 443;
 // echo | openssl s_client -connect script.google.com:443 |& openssl x509 -fingerprint -noout
-const char* fingerprint = ""; //############# PREENCHER
+const char* fingerprint = "CC A6 A3 F4 2A 75 1E 9A CF 33 B0 1B D8 03 C9 5A B6 94 0F 5A"; //############# PREENCHER
 
 // Write to Google Spreadsheet
 String url = String("/macros/s/") + GScriptId + "/exec?value=Conected_ESP8266";
@@ -131,6 +134,11 @@ void Conecta_google(void) {
   }
 }
 
+String getPage();
+void handleRoot(){
+  server.send ( 200, "text/html", getPage() );
+ }
+
 void setup() {
   Serial.begin(115200);
   pinMode(LED_AZUL, OUTPUT);  //define o led da placa como saida
@@ -142,43 +150,67 @@ void setup() {
   Serial.println("ESP conectado no WIFI !");
   ticker.detach();
   Serial.flush();
-  //setup_wifi();
   digitalWrite(LED_AZUL, HIGH); //desliga o led azul
   usrInit();  //ativa a interrupção
   Conecta_google(); //tenta se conectar no google
-
-
-
-  // Note: setup() must finish within approx. 1s, or the the watchdog timer
-  // will reset the chip. Hence don't put too many requests in setup()
-  // ref: https://github.com/esp8266/Arduino/issues/34
-
-
+  Serial.print("###### Iniciando Servidor Setup #######: ");
+  server.on ( "/", handleRoot );
+  server.begin();
+  Serial.println("OK");
   Serial.println("==============================================================================");
   //url = String("/macros/s/") + GScriptId + "/exec?now=ESP8266 conectado!";
   //client.printRedir(url, host, googleRedirHost);
   //client.printRedir(url2, host, googleRedirHost);
-  //Serial.println("==============================================================================");
 }
 
-// void setup_wifi() {
-//   delay(10);
-//   // We start by connecting to a WiFi network
-//   Serial.println();
-//   Serial.print("Connecting to ");
-//   Serial.println(wifi_ssid);
-//   WiFi.begin(wifi_ssid, wifi_password);
-//   while (WiFi.status() != WL_CONNECTED) {
-//     delay(500);
-//     Serial.print(".");
-//   }
-// }
 
 long lastMsg = 0;
 int cont = 0, valor_lum;
+bool flag_page = 0;
+
+String getPage() {  //Prepara a resposta para o cliente
+  String page = "";
+  //colocar o tempo de refresh da pagina na linha abaixo
+  page = "<html lang='br'><head><meta http-equiv='refresh' content='5' name='viewport' content='width=device-width, initial-scale=1'/>";
+  page += "<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'><script src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script><script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js'></script>";
+  page += "<title>ESP8266 Demo - www.projetsdiy.fr</title></head><body>";
+  page += "<!DOCTYPE html>";
+  page += "<html lang='en'>";
+  page += "  <head>";
+  page += "	<meta charset='utf-8'>";
+  page += "	<meta http-equiv='X-UA-Compatible' content='IE=edge'>";
+  page += "	<meta name='viewport' content='width=device-width, initial-scale=1'>";
+  page += "	<link href='css/bootstrappage +=minpage +=css' rel='stylesheet'>";
+  page += "	<link href='css/stylepage +=css' rel='stylesheet'>";
+  page += "  </head>";
+  page += "  <body>";
+  page += "	<div class='container-fluid'>";
+  page += "	<div class='row'>";
+  page += "		<div class='col-md-12'>";
+  page += "			<h3 class='text-center text-primary'>SETUP";
+  page += "			</h3> ";
+  page += "				<span class='label label-default'>";
+  page += cont_pulso;
+  page +=        "</span>";
+  page += "				<span class='label label-primary'>";
+  page += pulso;
+  page +=        "</span>";
+  page += "				<span class='label label-success'>";
+  page += pulso_max;
+  page +=       "</span>";
+  page += "		</div>";
+  page += "	</div>";
+  page += "</div>";
+  page += "	<script src='js/bootstrappage +=minpage +=js'></script>";
+  page += "  </body>";
+  page += "</html>";
+  return page;
+}
+
 
 void loop()
 {
+  server.handleClient();
   // while(millis() < now_interrupt + 10);
   // digitalWrite(LED_AZUL, HIGH);
   Serial.print("pulsos: ");
