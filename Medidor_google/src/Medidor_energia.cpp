@@ -18,7 +18,7 @@ extern "C"{
 #define LED_AZUL 2 // led azul na placa lolin nodemcu v3
 
 os_timer_t mTimer;
-WiFiClient  clientWifi;
+WiFiClient  client;
 
 int contador, leituras, cont_pulso;
 bool led_medidor, led_medidor_ant=1, pisca;
@@ -200,7 +200,7 @@ String getPage() {  //Prepara a resposta para o cliente
 
 void loop()
 {
-  server.handleClient();
+  //server.handleClient();
   // while(millis() < now_interrupt + 10);
   // digitalWrite(LED_AZUL, HIGH);
   Serial.print("pulsos: ");
@@ -219,9 +219,9 @@ void loop()
   // Serial.println(millis()-now_interrupt);
 
   if(flag_pulso) {  //so envia dados se houver pulso no led do medidor
+    flag_pulso=0; //so executa de novo se houver nova piscada no led do medidor
     Serial.println("========================================================== INICIO");
     long now = millis();
-    flag_pulso=0; //so executa de novo se houver nova piscada no led do medidor
     HTTPSRedirect client(httpsPort);
     if (!client.connected()) client.connect(host, httpsPort);
     url = String("/macros/s/") + GScriptId + "/exec?value=" + cont_pulso; //imprime a contagem de pulsos
