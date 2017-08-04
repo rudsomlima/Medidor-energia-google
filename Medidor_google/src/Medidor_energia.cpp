@@ -249,11 +249,11 @@ void loop()
       flag = true;
       client_https->setPrintResponseBody(true);
       //client_https->setContentTypeHeader("application/json");
-      Serial.println("1");
+      //Serial.println("1");
     }
 
     if (client_https != nullptr){
-      Serial.println("2");
+      //Serial.println("2");
       if (!client_https->connected()){
         client_https->connect(host, httpsPort);
         }
@@ -264,7 +264,7 @@ void loop()
     }
 
     if (connect_count > MAX_CONNECT){
-      Serial.println("4");
+      //Serial.println("4");
       //error_count = 5;
       connect_count = 0;
       flag = false;
@@ -274,8 +274,7 @@ void loop()
 
     Serial.println("GET append memory data to spreadsheet:");
     payload = cont_pulso;
-    url += payload;
-    if(client_https->GET(url, host)) {
+    if(client_https->GET(url + payload, host)) {
       Serial.println(client_https->getStatusCode());
       Serial.println(client_https->getReasonPhrase());
       Serial.println(client_https->getResponseBody());
