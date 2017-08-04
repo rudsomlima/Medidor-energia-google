@@ -214,10 +214,6 @@ String getPage() {  //Prepara a resposta para o cliente
 
 void loop()
 {
-
-
-
-
   //server.handleClient();
   // while(millis() < now_interrupt + 10);
   // digitalWrite(LED_AZUL, HIGH);
@@ -260,10 +256,7 @@ void loop()
       Serial.println("2");
       if (!client_https->connected()){
         client_https->connect(host, httpsPort);
-        payload = cont_pulso;
-        client_https->POST(url, host, payload, false);
-        Serial.println("3");
-      }
+        }
     }
     else{
       DPRINTLN("Error creating client object!");
@@ -279,12 +272,10 @@ void loop()
       return;
     }
 
-    Serial.println("POST append memory data to spreadsheet:");
+    Serial.println("GET append memory data to spreadsheet:");
     payload = cont_pulso;
-    if(client_https->POST(url, host, payload, false)) {
-      Serial.println("url: " + url);
-      Serial.println("host: " + *host);
-      Serial.println("payload: " + payload);
+    url += payload;
+    if(client_https->GET(url, host)) {
       Serial.println(client_https->getStatusCode());
       Serial.println(client_https->getReasonPhrase());
       Serial.println(client_https->getResponseBody());
@@ -294,9 +285,6 @@ void loop()
       DPRINT("Error-count while connecting: ");
       DPRINTLN(error_count);
     }
-
-
-
 
     Serial.print("tempo de post (ms): ");
     Serial.println(millis()-now);
