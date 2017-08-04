@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <HTTPSRedirect.h>
-//#include "DebugMacros.h"
+#include "DebugMacros.h"
 
 //https://github.com/tzapu/WiFiManager
 #include <DNSServer.h>
@@ -14,6 +14,8 @@ ESP8266WebServer server(80);
 extern "C"{
 #include "user_interface.h"
 }
+
+// for stack analytics
 
 #define LED_AZUL 2 // led azul na placa lolin nodemcu v3
 
@@ -57,20 +59,22 @@ void usrInit(void){
 void setup_wifi();
 String getPage();
 
+HTTPSRedirect* client_https = nullptr;
 const char* host = "script.google.com";
-const char* googleRedirHost = "script.googleusercontent.com";
 // Replace with your own script id to make server side changes
 const char *GScriptId = "AKfycby6pTof46p1U0oUxtmjEKF5sBDhzzjrdHPBoYb_u_PpHBJ0rWbo";
 const int httpsPort = 443;
-// echo | openssl s_client -connect script.google.com:443 |& openssl x509 -fingerprint -noout
-const char* fingerprint = "CC A6 A3 F4 2A 75 1E 9A CF 33 B0 1B D8 03 C9 5A B6 94 0F 5A"; //############# PREENCHER
+// echo | openssl s_client -connect script.google.com:443 | openssl x509 -fingerprint -noout
+const char* fingerprint = "FA 68 3A 05 76 C4 72 3A A9 C3 3E 8E 67 4D E4 8E CA A0 B0 48"; //############# PREENCHER
 
 // Write to Google Spreadsheet
-String url = String("/macros/s/") + GScriptId + "/exec?value=Conected_ESP8266";
+String url = String("/macros/s/") + GScriptId + "/exec?value=";
 // Fetch Google Calendar events for 1 week ahead
-//String url2 = String("/macros/s/") + GScriptId + "/exec?cal";
-// Read from Google Spreadsheet
-//String url3 = String("/macros/s/") + GScriptId + "/exec?read";
+// String url2 = String("/macros/s/") + GScriptId + "/exec?cal";
+// // Read from Google Spreadsheet
+// String url3 = String("/macros/s/") + GScriptId + "/exec?read";
+
+String payload = "";
 
 //for LED status
 Ticker ticker;
@@ -94,38 +98,48 @@ void configModeCallback (WiFiManager *myWiFiManager) {
 void Conecta_google(void) {
   ticker.attach(0.5, tick);  //pisca para mostrar q esta tentando se conectar ao google
   //bool flag_fingerprint = 0;
-  HTTPSRedirect client(httpsPort);
+  // Use HTTPSRedirect class to create a new TLS connection
+  client_https = new HTTPSRedirect(httpsPort);
+  client_https->setPrintResponseBody(true);
+  //client_https->setContentTypeHeader("application/json");
   Serial.print("Connecting to ");
   Serial.println(host);
 
+  // Try to connect for a maximum of 5 times
   bool flag = false;
   for (int i=0; i<5; i++){
-  int retval = client.connect(host, httpsPort);
-  if (retval == 1) {
-     flag = true;
-     break;
-  }
-  else
-    Serial.println("Connection failed. Retrying...");
+    int retval = client_https->connect(host, httpsPort);
+    if (retval == 1) {
+       flag = true;
+       break;
+    }
+    else
+      Serial.println("Connection failed. Retrying...");
   }
 
-  Serial.flush();
   if (!flag){
-  Serial.print("Could not connect to server: ");
-  Serial.println(host);
-  Serial.println("Exiting...");
+    Serial.print("Could not connect to server: ");
+    Serial.println(host);
+    Serial.println("Exiting...");
+    return;
   }
 
-  Serial.flush();
-  while(!client.verify(fingerprint, host)) {  //se o fingerprint nao foi aceito repete indefinidamente
-      Serial.println("Certificate mis-match");
-      delay(1000);
+  if (client_https->verify(fingerprint, host)) {
+    Serial.println("Certificate match.");
+  } else {
+    Serial.println("Certificate mis-match");
   }
-  Serial.println("Certificate match.");
+
+  // delete HTTPSRedirect object
+    delete client_https;
+    client_https = nullptr;
+
 }
 
+
+
 String getPage();
-void handleRoot(){
+void handleRoot() {
   server.send ( 200, "text/html", getPage() );
  }
 
@@ -200,6 +214,10 @@ String getPage() {  //Prepara a resposta para o cliente
 
 void loop()
 {
+
+
+
+
   //server.handleClient();
   // while(millis() < now_interrupt + 10);
   // digitalWrite(LED_AZUL, HIGH);
@@ -222,10 +240,64 @@ void loop()
     flag_pulso=0; //so executa de novo se houver nova piscada no led do medidor
     Serial.println("========================================================== INICIO");
     long now = millis();
-    HTTPSRedirect client(httpsPort);
-    if (!client.connected()) client.connect(host, httpsPort);
-    url = String("/macros/s/") + GScriptId + "/exec?value=" + cont_pulso; //imprime a contagem de pulsos
-    client.printRedir(url, host, googleRedirHost);
+
+    static int error_count = 0;
+    static int connect_count = 0;
+    const unsigned int MAX_CONNECT = 20;
+    static bool flag = false;
+    //Serial.printf("Free heap: %u\n", ESP.getFreeHeap());
+    //Serial.printf("unmodified stack   = %4d\n", cont_get_free_stack(&g_cont));
+
+    if (!flag){
+      client_https = new HTTPSRedirect(httpsPort);
+      flag = true;
+      client_https->setPrintResponseBody(true);
+      //client_https->setContentTypeHeader("application/json");
+      Serial.println("1");
+    }
+
+    if (client_https != nullptr){
+      Serial.println("2");
+      if (!client_https->connected()){
+        client_https->connect(host, httpsPort);
+        payload = cont_pulso;
+        client_https->POST(url, host, payload, false);
+        Serial.println("3");
+      }
+    }
+    else{
+      DPRINTLN("Error creating client object!");
+      error_count = 5;
+    }
+
+    if (connect_count > MAX_CONNECT){
+      Serial.println("4");
+      //error_count = 5;
+      connect_count = 0;
+      flag = false;
+      delete client_https;
+      return;
+    }
+
+    Serial.println("POST append memory data to spreadsheet:");
+    payload = cont_pulso;
+    if(client_https->POST(url, host, payload, false)) {
+      Serial.println("url: " + url);
+      Serial.println("host: " + *host);
+      Serial.println("payload: " + payload);
+      Serial.println(client_https->getStatusCode());
+      Serial.println(client_https->getReasonPhrase());
+      Serial.println(client_https->getResponseBody());
+    }
+    else{
+      ++error_count;
+      DPRINT("Error-count while connecting: ");
+      DPRINTLN(error_count);
+    }
+
+
+
+
     Serial.print("tempo de post (ms): ");
     Serial.println(millis()-now);
     Serial.println("============================================================ FIM");
