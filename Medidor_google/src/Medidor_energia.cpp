@@ -43,9 +43,9 @@ void tCallback(void *tCall){
       //digitalWrite(LED_AZUL, LOW);
     }
 
-    led_medidor_ant = led_medidor;
+    pulso_max = pulso; //pega o valor maximo do pulso do led
 
-    if(pulso>pulso_max)  pulso_max = pulso; //pega o valor maximo do pulso do led
+    led_medidor_ant = led_medidor;
 
     contador++;   //pra calcular quantas vezes essa funcao eh executada por segundo
 }
@@ -214,7 +214,7 @@ String getPage() {  //Prepara a resposta para o cliente
 
 void loop()
 {
-  //server.handleClient();
+  server.handleClient();
   // while(millis() < now_interrupt + 10);
   // digitalWrite(LED_AZUL, HIGH);
   Serial.print("pulsos: ");
@@ -225,7 +225,7 @@ void loop()
   Serial.println(pulso);
   Serial.print("opto_max: ");
   Serial.println(pulso_max);
-  pulso_max = 0; //reinicia o pulso_max para se recalibrar
+  //pulso_max = 0; //reinicia o pulso_max para se recalibrar
   contador = 0;  //zera a contagem de interrupcoes por segundo q esta ocorrendo
   yield();
   delay(1000);
