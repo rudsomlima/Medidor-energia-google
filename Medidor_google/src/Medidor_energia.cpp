@@ -4,12 +4,12 @@
 #include "DebugMacros.h"
 
 //https://github.com/tzapu/WiFiManager
-#include <DNSServer.h>
-#include <ESP8266WebServer.h>
+//#include <DNSServer.h> #webserver
+//#include <ESP8266WebServer.h>  #webserver
 #include <WiFiManager.h>
 #include <Ticker.h>
 
-ESP8266WebServer server(80);
+//ESP8266WebServer server(80); #webserver
 
 extern "C"{
 #include "user_interface.h"
@@ -42,7 +42,6 @@ void tCallback(void *tCall){
       //pisca o led azul da placa 10ms em alto, depois desliga
       //digitalWrite(LED_AZUL, LOW);
     }
-
     pulso_max = pulso; //pega o valor maximo do pulso do led
 
     led_medidor_ant = led_medidor;
@@ -136,12 +135,11 @@ void Conecta_google(void) {
 
 }
 
-
-
-String getPage();
-void handleRoot() {
-  server.send ( 200, "text/html", getPage() );
- }
+//#webserver
+// String getPage();
+// void handleRoot() {
+//   server.send ( 200, "text/html", getPage() );
+//  }
 
 void setup() {
   Serial.begin(115200);
@@ -169,10 +167,11 @@ void setup() {
   usrInit();  //ativa a interrupção
   Conecta_google(); //tenta se conectar no google
   ticker.detach();
-  Serial.print("###### Iniciando Servidor Setup #######: ");
-  server.on ( "/", handleRoot );
-  server.begin();
-  Serial.println("OK");
+  //#webserver
+  // Serial.print("###### Iniciando Servidor Setup #######: ");
+  // server.on ( "/", handleRoot );
+  // server.begin();
+  // Serial.println("OK");
   Serial.println("==============================================================================");
   digitalWrite(LED_AZUL, HIGH); //desliga o led azul
   //url = String("/macros/s/") + GScriptId + "/exec?now=ESP8266 conectado!";
@@ -180,54 +179,53 @@ void setup() {
   //client.printRedir(url2, host, googleRedirHost);
 }
 
-
 long lastMsg = 0;
 int cont = 0, valor_lum;
 bool flag_page = 0;
 
-String getPage() {  //Prepara a resposta para o cliente
-  String page = "";
-  //colocar o tempo de refresh da pagina na linha abaixo
-  page = "<html lang='br'><head><meta http-equiv='refresh' content='5' name='viewport' content='width=device-width, initial-scale=1'/>";
-  page += "<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'><script src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script><script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js'></script>";
-  page += "<title>ESP8266 Demo - www.projetsdiy.fr</title></head><body>";
-  page += "<!DOCTYPE html>";
-  page += "<html lang='en'>";
-  page += "  <head>";
-  page += "	<meta charset='utf-8'>";
-  page += "	<meta http-equiv='X-UA-Compatible' content='IE=edge'>";
-  page += "	<meta name='viewport' content='width=device-width, initial-scale=1'>";
-  page += "	<link href='css/bootstrappage +=minpage +=css' rel='stylesheet'>";
-  page += "	<link href='css/stylepage +=css' rel='stylesheet'>";
-  page += "  </head>";
-  page += "  <body>";
-  page += "	<div class='container-fluid'>";
-  page += "	<div class='row'>";
-  page += "		<div class='col-md-12'>";
-  page += "			<h3 class='text-center text-primary'>SETUP";
-  page += "			</h3> ";
-  page += "				<span class='label label-default'>";
-  page += cont_pulso;
-  page +=        "</span>";
-  page += "				<span class='label label-primary'>";
-  page += pulso;
-  page +=        "</span>";
-  page += "				<span class='label label-success'>";
-  page += pulso_max;
-  page +=       "</span>";
-  page += "		</div>";
-  page += "	</div>";
-  page += "</div>";
-  page += "	<script src='js/bootstrappage +=minpage +=js'></script>";
-  page += "  </body>";
-  page += "</html>";
-  return page;
-}
-
+//#webserver
+// String getPage() {  //Prepara a resposta para o cliente
+//   String page = "";
+//   //colocar o tempo de refresh da pagina na linha abaixo
+//   page = "<html lang='br'><head><meta http-equiv='refresh' content='5' name='viewport' content='width=device-width, initial-scale=1'/>";
+//   page += "<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'><script src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script><script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js'></script>";
+//   page += "<title>ESP8266 Demo - www.projetsdiy.fr</title></head><body>";
+//   page += "<!DOCTYPE html>";
+//   page += "<html lang='en'>";
+//   page += "  <head>";
+//   page += "	<meta charset='utf-8'>";
+//   page += "	<meta http-equiv='X-UA-Compatible' content='IE=edge'>";
+//   page += "	<meta name='viewport' content='width=device-width, initial-scale=1'>";
+//   page += "	<link href='css/bootstrappage +=minpage +=css' rel='stylesheet'>";
+//   page += "	<link href='css/stylepage +=css' rel='stylesheet'>";
+//   page += "  </head>";
+//   page += "  <body>";
+//   page += "	<div class='container-fluid'>";
+//   page += "	<div class='row'>";
+//   page += "		<div class='col-md-12'>";
+//   page += "			<h3 class='text-center text-primary'>SETUP";
+//   page += "			</h3> ";
+//   page += "				<span class='label label-default'>";
+//   page += cont_pulso;
+//   page +=        "</span>";
+//   page += "				<span class='label label-primary'>";
+//   page += pulso;
+//   page +=        "</span>";
+//   page += "				<span class='label label-success'>";
+//   page += pulso_max;
+//   page +=       "</span>";
+//   page += "		</div>";
+//   page += "	</div>";
+//   page += "</div>";
+//   page += "	<script src='js/bootstrappage +=minpage +=js'></script>";
+//   page += "  </body>";
+//   page += "</html>";
+//   return page;
+// }
 
 void loop()
 {
-  server.handleClient();
+  //server.handleClient();  #webserver
   // while(millis() < now_interrupt + 10);
   // digitalWrite(LED_AZUL, HIGH);
   Serial.print("pulsos: ");
