@@ -24,7 +24,7 @@ WiFiClient  client;
 
 int contador, leituras, cont_pulso;
 bool led_medidor, led_medidor_ant=1, pisca;
-int pulso, pulso_max; //valor da medicao do led na piscada
+int pulso, pulso_max=0; //valor da medicao do led na piscada
 String envio;
 bool flag_pulso;  //verifica q houve pulso
 
@@ -86,10 +86,10 @@ void tick()
 }
 
 void configModeCallback (WiFiManager *myWiFiManager) {
-  Serial.println("Entered config mode");
-  Serial.println(WiFi.softAPIP());
+  //Serial.println("Entered config mode");
+  //Serial.println(WiFi.softAPIP());
   //if you used auto generated SSID, print it
-  Serial.println(myWiFiManager->getConfigPortalSSID());
+  //Serial.println(myWiFiManager->getConfigPortalSSID());
   //entered config mode, make led toggle faster
   ticker.attach(0.1, tick);
 }
@@ -147,10 +147,23 @@ void setup() {
   Serial.begin(115200);
   pinMode(LED_AZUL, OUTPUT);  //define o led da placa como saida
   WiFiManager wifiManager;
+  //exit after config instead of connecting
+  //wifiManager.setConfigPortalTimeout(60);  //se apos 60s nao se conectar sai do portal de acesso
   //wifiManager.resetSettings(); //força entrada no portal de configuracao, só pra testes
   //set callback that gets called when connecting to previous WiFi fails, and enters Access Point mode
+  //tries to connect to last known settings
+  //if it does not connect it starts an access point with the specified name
+  //here  "AutoConnectAP" with password "password"
+  //and goes into a blocking loop awaiting configuration
   wifiManager.setAPCallback(configModeCallback);
-  wifiManager.autoConnect("ESP8266", "smolder"); //nome e senha para acessar o portal
+  if(!wifiManager.autoConnect("ESP8266", "smolder")); {             //nome e senha para acessar o portal
+    //Serial.println("failed to connect, we should reset as see if it connects");
+    //delay(3000);
+    //return;  //segue o programa mesmo sem conexões
+    // delay(3000);
+    // ESP.reset();
+    // delay(5000);
+  }
   Serial.println("ESP conectado no WIFI !");
   Serial.flush();
   usrInit();  //ativa a interrupção
