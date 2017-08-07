@@ -27,11 +27,14 @@ bool led_medidor, led_medidor_ant=1, pisca;
 int pulso, pulso_max=0; //valor da medicao do led na piscada
 String envio;
 bool flag_pulso;  //verifica q houve pulso
+int tempo_led_azul;
 
 //Nunca execute nada na interrupcao, apenas setar flags!
 void tCallback(void *tCall){
     //now_interrupt = millis();  //calcula o tempo da interrupcao
     pulso = analogRead(A0);
+
+    if(millis()>tempo_led_azul+10) digitalWrite(LED_AZUL, HIGH);  //desliga o led azul
 
     if(pulso<pulso_max-20) led_medidor = 0; //nao houve pulso do led do medidor, valor de leitura base do opto
     else led_medidor = 1;
@@ -39,8 +42,9 @@ void tCallback(void *tCall){
     if(!led_medidor_ant & led_medidor) { //se mudou de 0 pra 1, incrementa
       cont_pulso++;
       flag_pulso=1;
+      tempo_led_azul = millis();
       //pisca o led azul da placa 10ms em alto, depois desliga
-      //digitalWrite(LED_AZUL, LOW);
+      digitalWrite(LED_AZUL, LOW);
     }
     pulso_max = pulso; //pega o valor maximo do pulso do led
 
